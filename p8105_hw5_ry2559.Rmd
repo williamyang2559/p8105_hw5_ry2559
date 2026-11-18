@@ -59,6 +59,88 @@ birthday_results |>
 The probability that at least two people share a birthday increases rapidly as group size increases. The simulated probability is approximately 50% when the group size is around 23 people and continues to rise toward 100% as the group becomes larger. This illustrates the birthday paradox: a shared birthday becomes likely even in a group that is much smaller than 365 people.
 
 
+# Problem 2
+```{r}
+file_names = list.files(
+  path = "data",
+  pattern = "\\.csv$",
+  full.names = TRUE
+)
+
+file_names
+```
+```{r}
+study_data = tibble(
+  file_name = file_names
+) |>
+  mutate(
+    data = map(
+      file_name,
+      ~ read_csv(.x, show_col_types = FALSE)
+    )
+  )
+
+study_data
+```
+```{r}
+study_data = study_data |>
+  mutate(
+    arm = case_when(
+      str_detect(file_name, "con_") ~ "control",
+      str_detect(file_name, "exp_") ~ "experimental"
+    ),
+    subject_id = str_extract(file_name, "\\d{2}")
+  )
+
+study_data
+```
+```{r}
+tidy_study = study_data |>
+  unnest(data) |>
+  pivot_longer(
+    cols = starts_with("week_"),
+    names_to = "week",
+    values_to = "observation",
+    names_prefix = "week_",
+    names_transform = list(week = as.integer)
+  ) |>
+  select(arm, subject_id, week, observation)
+
+tidy_study
+```
+```{r}
+tidy_study |>
+  ggplot(
+    aes(
+      x = week,
+      y = observation,
+      group = interaction(arm, subject_id),
+      color = arm
+    )
+  ) +
+  geom_line(alpha = 0.7) +
+  geom_point(size = 1.5) +
+  scale_x_continuous(breaks = 1:8) +
+  labs(
+    x = "Week",
+    y = "Observation",
+    color = "Study Arm",
+    title = "Observations Over Time by Study Arm"
+  ) +
+  theme_minimal()
+```
+
+The control group remains relatively stable over the eight weeks, with observations fluctuating around similar levels over time. In contrast, the experimental group shows a clear upward trend, with observations generally increasing as the study progresses. The difference between the two groups becomes more pronounced in the later weeks, suggesting that the experimental condition may be associated with increasing outcome values over time.
+
+
+
+
+
+
+
+
+
+
 
 
 
