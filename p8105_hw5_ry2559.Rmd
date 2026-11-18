@@ -1,0 +1,24 @@
+---
+title: "Homework 5"
+author: "Ruichen Yang"
+date: "2026-11-18"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(broom)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+
+# Problem 1
+
+# Problem 2
+
+# Problem 3
