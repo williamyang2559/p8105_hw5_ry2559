@@ -133,12 +133,118 @@ tidy_study |>
 The control group remains relatively stable over the eight weeks, with observations fluctuating around similar levels over time. In contrast, the experimental group shows a clear upward trend, with observations generally increasing as the study progresses. The difference between the two groups becomes more pronounced in the later weeks, suggesting that the experimental condition may be associated with increasing outcome values over time.
 
 
+# Problem 3
+```{r}
+sim_ttest = function(mu) {
+  sample_data = rnorm(
+    n = 30,
+    mean = mu,
+    sd = 5
+  )
+
+  test_result = t.test(
+    sample_data,
+    mu = 0
+  )
+
+  broom::tidy(test_result) |>
+    select(estimate, p.value)
+}
+```
+
+```{r}
+set.seed(1)
+
+simulation_results = expand_grid(
+  mu = 0:6,
+  simulation = 1:5000
+) |>
+  mutate(
+    result = map(mu, sim_ttest)
+  ) |>
+  unnest(result) |>
+  select(-simulation)
+
+simulation_results
+```
+```{r}
+power_results = simulation_results |>
+  group_by(mu) |>
+  summarize(
+    power = mean(p.value < 0.05),
+    .groups = "drop"
+  )
+
+power_results
+```
+```{r}
+power_results |>
+  ggplot(aes(x = mu, y = power)) +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(breaks = 0:6) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    labels = scales::percent_format()
+  ) +
+  labs(
+    x = "True Value of Mu",
+    y = "Power",
+    title = "Power as a Function of Effect Size"
+  ) +
+  theme_minimal()
+```
 
 
+Power increases as the true value of \(\mu\) moves farther from the null value of 0. When the effect size is small, the test has relatively low power, but power rises quickly as the effect size increases and approaches 100% for larger values of \(\mu\).
 
 
+```{r}
+estimate_results = simulation_results |>
+  group_by(mu) |>
+  summarize(
+    mean_estimate = mean(estimate),
+    mean_estimate_rejected = mean(estimate[p.value < 0.05]),
+    .groups = "drop"
+  )
+
+estimate_results
+```
 
 
+```{r}
+estimate_results |>
+  pivot_longer(
+    cols = c(mean_estimate, mean_estimate_rejected),
+    names_to = "estimate_type",
+    values_to = "average_estimate"
+  ) |>
+  ggplot(
+    aes(
+      x = mu,
+      y = average_estimate,
+      color = estimate_type
+    )
+  ) +
+  geom_line() +
+  geom_point() +
+  geom_abline(
+    slope = 1,
+    intercept = 0,
+    linetype = "dashed"
+  ) +
+  scale_x_continuous(breaks = 0:6) +
+  labs(
+    x = "True Value of Mu",
+    y = "Average Estimate of Mu",
+    color = "Estimate Type",
+    title = "Average Estimated Mu Across Simulations"
+  ) +
+  theme_minimal()
+```
+
+
+Across all simulations, the average estimate of \(\mu\) is very close to the true value, as expected. However, when we consider only samples in which the null hypothesis was rejected, the average estimate can be substantially larger than the true value when the effect size is small. This occurs because, when power is low, rejection is more likely in samples that happen to produce unusually large estimated effects. As the true value of \(\mu\) increases and power approaches 100%, nearly all samples reject the null hypothesis, so the average estimate among rejected samples becomes approximately equal to the true value of \(\mu\).
 
 
 
